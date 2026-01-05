@@ -1,0 +1,109 @@
+
+
+# 🚀 Mamba-UNet 极速避坑复现指南 (WSL/Linux 版)
+
+### 1. 代码克隆与网络修复
+
+如果不挂代理无法下载，先取消 git 代理设置再克隆：
+
+```bash
+# 1. 取消可能存在的死代理
+git config --global --unset http.proxy
+git config --global --unset https.proxy
+
+# 2. 克隆项目
+cd ~/code
+git clone https://github.com/ziyangwang007/Mamba-UNet.git
+cd Mamba-UNet
+
+```
+
+### 2. 环境创建 (使用 Pip 避免 Conda 死循环)
+
+不要让 Conda 去计算 PyTorch 依赖，直接创建空环境后用 Pip 装。
+
+```bash
+# 1. 创建 Python 3.10 环境
+conda create -n mamba_env python=3.10 -y
+conda activate mamba_env
+
+# 2. 安装 PyTorch 2.1.0 + CUDA 12.1 (官方推荐组合)
+pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121
+
+```
+
+### 3. 安装 Mamba 核心 (跳过本地编译)
+
+**这是最关键的一步。** 绝对不要运行 `python setup.py install`，否则会因为 GCC/CUDA 版本不匹配报错。直接下载官方编译好的 Wheel 包。
+
+```bash
+# 直接安装预编译包
+pip install causal-conv1d==1.2.2.post1
+pip install mamba-ssm==1.2.2
+
+```
+
+### 4. 一键安装所有依赖 (解决缺包与内存溢出)
+
+这里汇总了你刚才报错缺失的所有包（timm, fvcore, cv2, h5py 等），并解决了 SimpleITK 编译内存溢出的问题。
+
+```bash
+# 1. 先用 Conda 安装 SimpleITK (避免 Pip 源码编译导致内存溢出)
+conda install -c simpleitk simpleitk -y
+
+# 2. 用 Pip 一次性安装剩余所有依赖
+# 注意：timm 指定 0.4.12 是为了兼容 Swin Transformer
+pip install monai torchio numpy scikit-image scipy medpy nibabel tqdm tensorboardX \
+            ml_collections fvcore batchgenerators matplotlib h5py efficientnet_pytorch \
+            timm==0.4.12 opencv-python-headless
+
+```
+
+### 5. 数据与权重搬运 (WSL 专用)
+
+不要用软链接，直接从 Windows D 盘复制数据，以保证 I/O 速度。
+
+**目录结构准备：**
+
+```bash
+mkdir -p data/ACDC
+mkdir -p code/pretrained_ckpt
+
+```
+
+**复制命令 (根据你的实际路径调整源路径)：**
+
+```bash
+# 1. 复制 ACDC 数据集
+# 假设你的数据在 D:\code\python\Mamba-UNet-main\data\ACDC\ACDC
+cp -r /mnt/d/code/python/Mamba-UNet-main/data/ACDC/ACDC/* ./data/ACDC/
+
+# 2. 复制 VMamba 预训练权重 (注意：是 vmamba_tiny 不是 swin)
+# 假设你在 D:\download 下
+cp /mnt/d/download/vmamba_tiny_e292.pth ./code/pretrained_ckpt/
+
+```
+
+### 6. 运行训练
+
+一切就绪，进入代码目录启动：
+
+```bash
+cd code
+python train_fully_supervised_2D_VIM.py \
+  --root_path ../data/ACDC \
+  --exp ACDC/VIM \
+  --model mambaunet \
+  --max_iterations 10000 \
+  --batch_size 24 \
+  --num_classes 4
+
+```
+
+---
+
+### 💡 常见问题速查
+
+* **报错 `OOM` (Out of Memory):** 显存爆了 -> 将 `--batch_size 24` 改为 `12` 或 `8`。
+* **报错 `FileNotFoundError`:** 检查路径 -> 确保 `pretrained_ckpt` 里有 `.pth` 文件，且 `data/ACDC` 里有数据。
+* **报错 `libGL.so.1`:** OpenCV 图形库缺依赖 -> 确保装的是 `opencv-python-headless` (上面的命令里已包含)。
