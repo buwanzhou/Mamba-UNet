@@ -26,6 +26,7 @@ parser.add_argument('--num_classes', type=int,  default=4,
                     help='output channel of network')
 parser.add_argument('--labeled_num', type=int, default=3,
                     help='labeled data')
+parser.add_argument('--cfg', type=str, default="configs/vmamba_tiny.yaml", help='path to config file')
 
 
 def calculate_metric_percase(pred, gt):
@@ -87,8 +88,8 @@ def Inference(FLAGS):
         image_list = f.readlines()
     image_list = sorted([item.replace('\n', '').split(".")[0]
                          for item in image_list])
-    # snapshot_path = "../model/{}_{}_labeled/{}".format(
-    snapshot_path = "../model/{}_{}/{}".format(        
+    snapshot_path = "../model/{}_{}_labeled/{}".format(
+    #snapshot_path = "../model/{}_{}/{}".format(        
         FLAGS.exp, FLAGS.labeled_num, FLAGS.model)
     # test_save_path = "../model/{}_{}_labeled/{}_predictions/".format(
     test_save_path = "../model/{}_{}/{}_predictions/".format(        

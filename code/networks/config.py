@@ -74,6 +74,14 @@ _C.MODEL.SWIN.APE = False
 _C.MODEL.SWIN.PATCH_NORM = True
 _C.MODEL.SWIN.FINAL_UPSAMPLE= "expand_first"
 
+
+# VSSM (Mamba) 参数
+_C.MODEL.VSSM = CN()
+_C.MODEL.VSSM.PATCH_SIZE = 4
+_C.MODEL.VSSM.IN_CHANS = 3
+_C.MODEL.VSSM.EMBED_DIM = 96
+_C.MODEL.VSSM.DEPTHS = [2, 2, 2, 2]
+
 # -----------------------------------------------------------------------------
 # Training settings
 # -----------------------------------------------------------------------------
