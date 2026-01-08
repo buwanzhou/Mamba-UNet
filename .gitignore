@@ -1,0 +1,19 @@
+
+# 数据与实验模型路径
+data/*/
+model/ACDC/*/
+
+# 预训练权重文件 (截图中的 .pth)
+*.pth
+code/pretrained_ckpt/
+
+# Python 运行缓存 (截图中最多的部分)
+**/__pycache__/
+*.py[cod]
+
+# Causal-conv1d 环境安装产物 (截图中的 build 和 egg-info)
+causal-conv1d/build/
+causal-conv1d/causal_conv1d.egg-info/
+
+# 编辑器配置
+.vscode/
