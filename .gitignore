@@ -2,6 +2,8 @@
 # 数据与实验模型路径
 data/*/
 model/ACDC/*/
+model/MnM2/*/
+
 
 # 预训练权重文件 (截图中的 .pth)
 *.pth

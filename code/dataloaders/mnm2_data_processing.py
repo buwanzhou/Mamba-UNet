@@ -10,7 +10,8 @@ import random
 def find_volume_and_mask(patient_dir):
     # Prefer short-axis ED volume (has ground truth), fallback to ES or CINE
     candidates = []
-    for pattern in ("*SA_ED.nii*", "*SA_ES.nii*", "*SA_CINE.nii*", "*LA_ED.nii*", "*LA_ES.nii*"):
+    #for pattern in ("*SA_ED.nii*", "*SA_ES.nii*", "*SA_CINE.nii*", "*LA_ED.nii*", "*LA_ES.nii*"):
+    for pattern in ("*SA_ED.nii*", "*SA_ES.nii*", "*SA_CINE.nii*"):
         candidates.extend(sorted(glob.glob(os.path.join(patient_dir, pattern))))
     for vol in candidates:
         # construct expected mask name

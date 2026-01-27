@@ -1,0 +1,4 @@
+  File "code/train_mnm2.py", line 224
+    snapshot_path = "../model/{}_{}_labeled/{}".format(
+    ^
+IndentationError: unexpected indent

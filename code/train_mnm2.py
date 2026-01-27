@@ -22,11 +22,6 @@ from tqdm import tqdm
 
 from dataloaders import utils
 from dataloaders.dataset import BaseDataSets, RandomGenerator
-import sys
-# Ensure net_factory's argument parser sees a valid --cfg path when imported.
-# If user already provided --cfg on the command line, don't override it.
-if '--cfg' not in sys.argv:
-    sys.argv.extend(['--cfg', 'code/configs/vmamba_tiny.yaml'])
 from networks.net_factory import net_factory
 from utils import losses, metrics, ramps
 from val_2D import test_single_volume, test_single_volume_ds
@@ -38,7 +33,7 @@ parser.add_argument('--exp', type=str,
                     default='MnM2/Fully_Supervised', help='experiment_name')
 parser.add_argument('--model', type=str,
                     default='mambaunet', help='model_name')
-parser.add_argument('--num_classes', type=int,  default=2,
+parser.add_argument('--num_classes', type=int,  default=4,
                     help='output channel of network')
 parser.add_argument('--cfg', type=str, default="configs/vmamba_tiny.yaml", help='path to config file')
 parser.add_argument('--max_iterations', type=int,
@@ -52,7 +47,7 @@ parser.add_argument('--base_lr', type=float,  default=0.01,
 parser.add_argument('--patch_size', type=list,  default=[256, 256],
                     help='patch size of network input')
 parser.add_argument('--seed', type=int,  default=1337, help='random seed')
-parser.add_argument('--labeled_num', type=int, default=140,
+parser.add_argument('--labeled_num', type=int, default=288,
                     help='labeled data (patients or slices)')
 args = parser.parse_args()
 
@@ -197,11 +192,12 @@ def train(args, snapshot_path):
                     'iteration %d : mean_dice : %f mean_hd95 : %f' % (iter_num, performance, mean_hd95))
                 model.train()
 
-            if iter_num % 3000 == 0:
-                save_mode_path = os.path.join(
-                    snapshot_path, 'iter_' + str(iter_num) + '.pth')
-                torch.save(model.state_dict(), save_mode_path)
-                logging.info("save model to {}".format(save_mode_path))
+            # Disabled periodic full checkpoint every 3000 iters to save disk space
+            # if iter_num % 3000 == 0:
+            #     save_mode_path = os.path.join(
+            #         snapshot_path, 'iter_' + str(iter_num) + '.pth')
+            #     torch.save(model.state_dict(), save_mode_path)
+            #     logging.info("save model to {}".format(save_mode_path))
 
             if iter_num >= max_iterations:
                 break
@@ -225,14 +221,19 @@ if __name__ == "__main__":
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
 
-    snapshot_path = "../model/{}_{}_labeled/{}".format(
+    snapshot_path = "model/{}_{}_labeled/{}".format(
         args.exp, args.labeled_num, args.model)
     if not os.path.exists(snapshot_path):
         os.makedirs(snapshot_path)
-    if os.path.exists(snapshot_path + '/code'):
-        shutil.rmtree(snapshot_path + '/code')
-    shutil.copytree('.', snapshot_path + '/code',
-                    shutil.ignore_patterns(['.git', '__pycache__']))
+    # Copy only the repository `code/` directory into the snapshot to avoid
+    # backing up large `data/` or `model/` folders that inflate disk usage.
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    src_code_dir = os.path.join(repo_root, 'code')
+    dst_code_dir = os.path.join(snapshot_path, 'code')
+    if os.path.exists(dst_code_dir):
+        shutil.rmtree(dst_code_dir)
+    shutil.copytree(src_code_dir, dst_code_dir,
+                    shutil.ignore_patterns('.git', '__pycache__'))
 
     logging.basicConfig(filename=snapshot_path+"/log.txt", level=logging.INFO,
                         format='[%(asctime)s.%(msecs)03d] %(message)s', datefmt='%H:%M:%S')
